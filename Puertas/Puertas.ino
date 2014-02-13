@@ -21,6 +21,8 @@
 //  1    0    1  3.0  A 
 
 #include <AccelStepper.h> // Biblioteca de funciones mejorada para motores a pasos
+#include <Ethernet.h>     // Biblioteca de funciones ethernet
+#include <SPI.h>          // Biblioteca serial
 
 // Definimos el stepper y los pines que usaremos
 AccelStepper driver(AccelStepper::DRIVER, 2, 3); // Indicamos que utilizaremos un driver
@@ -28,8 +30,15 @@ AccelStepper driver(AccelStepper::DRIVER, 2, 3); // Indicamos que utilizaremos u
 int puertaCerrada = 8;  // El sensor que indica que la puerta esta cerrada
 int puertaAbierta = 9;  // Sensor que indica que la puerta esta abierta
 
-int abrir = 6;          // Push boton temporal abre las puertas
-int cerrar = 7;         // Push boton temporal cierra las puertas
+// Variables para configuración de ethernet
+byte mac [] = {};          // Configurar la MAC de cada dispositivo
+byte ip [] = { 148, 206, 78, 190};  // Direccion IP
+
+EthernetServer server(80);  // puerto del servidor cambiar para mejorar la seguridad
+
+String readString;
+//int abrir = 6;         // Push boton temporal abre las puertas
+//int cerrar = 7;        // Push boton temporal cierra las puertas
 
                                                  
 void setup()
@@ -42,8 +51,16 @@ void setup()
   
   pinMode(puertaCerrada, INPUT);
   pinMode(puertaAbierta, INPUT);
-  pinMode(abrir, INPUT);
-  pinMode(cerrar, INPUT);  
+  //  pinMode(abrir, INPUT);
+  //  pinMode(cerrar, INPUT);
+  
+  // Iniciamos Ethernet
+  Ethernet.begin( mac, ip);
+  server.begin();
+  
+  // Iniciamos el puerto serial
+  Serial.begin(9600);
+  Serial.println("Control de puertas 0.1"); // Asi puedo verificar la version cargada  
 }
 
 void loop()
@@ -54,11 +71,51 @@ void loop()
   if (digitalRead(puertaCerrada) == HIGH)  {
     driver.setCurrentPosition(1600);
   }
-  if(digitalRead(abrir) == HIGH)  
-    driver.moveTo(1600);
+//  if(digitalRead(abrir) == HIGH)  
+//    driver.moveTo(1600);
+//  }
+//  if(digitalRead(cerrar) == HIGH)
+//    driver.moveTo(0);
+//  }
+//  driver.run();
+
+  // Creamos una conexion
+  EthernetClient client = server.available();
+  if (client)  {
+    while (client.connected())  {
+      if(client.available())  {
+        char c = client.read();
+        
+        // lee la peticion HTTP caracter por caracter
+        if (readString.length() < 100)  {
+          readString += c;
+        }
+        // si la peticion HTTP ha terminado
+        if (c == '\n')  {
+          Serial.println(readString);  // imprime al monitor serial para debug
+          
+         // respuesta estandar
+         client.println("HTTP/1.1 200 OK");
+         client.println("Contnt-Type: text/html");
+         client.println();
+         
+         // detenemos el cliente<
+         client.stop();
+         
+         // control de puertas
+         if(readString.indexOf("?abrir") > 0)//verifica para abrir
+         {
+           driver.moveTo(1600);
+           Serial.println("abriendo");
+         } 
+         if(readString.indexOf("?cerrar") > 0)//verifica para cerrar
+         {
+           driver.moveTo(0);
+           Serial.println("cerrando");
+         }   
+        }  
+      }  
+    }
   }
-  if(digitalRead(cerrar) == HIGH)
-    driver.moveTo(0);
-  }
-  driver.run();
+  driver.run();  
 }
