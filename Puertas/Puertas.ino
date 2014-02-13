@@ -112,7 +112,8 @@ void loop()
          {
            driver.moveTo(0);
            Serial.println("cerrando");
-         }   
+         }
+         readString="";   
         }  
       }  
     }
