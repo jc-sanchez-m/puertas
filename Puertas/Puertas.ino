@@ -1,8 +1,6 @@
 // Control Puertas
 // -*- modo: C++ -*-
 // 
-// lee el valor en los pines digitales 6 y 7
-// para abrir o cerrar las puertas
 // lee el valor en los pines digitales 8 y 9
 // para saber la posicion de las puertas
 // 8 = puertaCerrada, 9 = puertaAbierta
@@ -37,9 +35,6 @@ byte ip [] = { 148, 206, 78, 190};  // Direccion IP
 EthernetServer server(80);  // puerto del servidor cambiar para mejorar la seguridad
 
 String readString;
-//int abrir = 6;         // Push boton temporal abre las puertas
-//int cerrar = 7;        // Push boton temporal cierra las puertas
-
                                                  
 void setup()
 {
@@ -51,9 +46,7 @@ void setup()
   
   pinMode(puertaCerrada, INPUT);
   pinMode(puertaAbierta, INPUT);
-  //  pinMode(abrir, INPUT);
-  //  pinMode(cerrar, INPUT);
-  
+ 
   // Iniciamos Ethernet
   Ethernet.begin( mac, ip);
   server.begin();
@@ -71,13 +64,6 @@ void loop()
   if (digitalRead(puertaCerrada) == HIGH)  {
     driver.setCurrentPosition(1600);
   }
-//  if(digitalRead(abrir) == HIGH)  
-//    driver.moveTo(1600);
-//  }
-//  if(digitalRead(cerrar) == HIGH)
-//    driver.moveTo(0);
-//  }
-//  driver.run();
 
   // Creamos una conexion
   EthernetClient client = server.available();
@@ -99,7 +85,7 @@ void loop()
          client.println("Contnt-Type: text/html");
          client.println();
          
-         // detenemos el cliente<
+         // detenemos el cliente
          client.stop();
          
          // control de puertas
